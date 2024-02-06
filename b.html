@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   
+</head>
+<body>
+
+<script>
+class Shope {
+    constructor() {
+        this.cart = {
+            "Product A": { quantity: 0, giftWrap: 0, price: 20 },
+            "Product B": { quantity: 0, giftWrap: 0, price: 40 },
+            "Product C": { quantity: 0, giftWrap: 0, price: 50 }
+        };
+
+        this.discountRules = {
+            flat_10_discount: 10,
+            bulk_5_discount: 5,
+            bulk_10_discount: 10,
+            tiered_50_discount: 50
+        };
+
+        this.giftWrapFee = 1;
+        this.shippingFee = 5;
+        this.unitsPerPackage = 10;
+    }
+
+    calculateDiscount() {
+        const totalQuantity = Object.values(this.cart).reduce((acc, item) => acc + item.quantity, 0);
+
+        let maxDiscount = { rule: null, discount: 0 };
+
+        for (const [rule, discount] of Object.entries(this.discountRules)) {
+            if (
+                (rule === "flat_10_discount" && totalQuantity > 20) ||
+                (rule === "bulk_5_discount" && Object.values(this.cart).some(item => item.quantity > 10)) ||
+                (rule === "bulk_10_discount" && totalQuantity > 20) ||
+                (rule === "tiered_50_discount" &&
+                    totalQuantity > 30 &&
+                    Object.values(this.cart).some(item => item.quantity > 15))
+            ) {
+                if (discount > maxDiscount.discount) {
+                    maxDiscount = { rule, discount };
+                }
+            }
+        }
+
+        return maxDiscount;
+    }
+
+    calculateCost() {
+        let subtotal = 0;
+        let totalQuantity = 0;
+
+        for (const [product, details] of Object.entries(this.cart)) {
+            const { quantity, price } = details;
+            totalQuantity += quantity;
+            subtotal += quantity * price;
+
+            if (quantity > 15) {
+                subtotal -= (quantity - 15) * price * 0.5;
+            }
+        }
+
+        const { rule: discountRule, discount: discountAmount } = this.calculateDiscount();
+
+        const shippingFee = Math.ceil(totalQuantity / this.unitsPerPackage) * this.shippingFee;
+        const giftWrapFee = Object.values(this.cart).reduce(
+            (acc, details) => acc + details.giftWrap * this.giftWrapFee,
+            0
+        );
+
+        const total = subtotal - discountAmount + shippingFee + giftWrapFee;
+
+        return { subtotal, discountRule, discountAmount, shippingFee, giftWrapFee, total };
+    }
+
+    run() {
+        for (const product in this.cart) {
+            const quantity = parseInt(prompt(`Enter quantity of ${product}:`), 10);
+            const giftWrap = parseInt(prompt(`Is ${product} wrapped as a gift? (1 for Yes, 0 for No):`), 10);
+            this.cart[product].quantity = quantity;
+            this.cart[product].giftWrap = giftWrap;
+        }
+
+        const { subtotal, discountRule, discountAmount, shippingFee, giftWrapFee, total } = this.calculateCost();
+
+        console.log("\n\n:output");
+        for (const [product, details] of Object.entries(this.cart)) {
+            console.log(`${product} - Quantity: ${details.quantity} - Total: ${details.quantity * details.price}`);
+        }
+
+        console.log("\nSubtotal:", subtotal);
+        if (discountAmount > 0) {
+            console.log(`Discount Applied (${discountRule}):`, discountAmount);
+        } else {
+            console.log("No applicable discount");
+        }
+        console.log("Shipping Fee:", shippingFee);
+        console.log("Gift Wrap Fee:", giftWrapFee);
+        console.log("\nTotal:", total);
+    }
+}
+
+const shopping = new Shope();
+shopping.run();
+</script>
+
+</body>
+</html>
